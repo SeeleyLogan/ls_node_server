@@ -13,15 +13,15 @@ i32_t main(void)
 {
     pthread_t server_thread, client1_thread, client2_thread;
 
-    pthread_create(&server_thread, NULL, server, NULL);
+    pthread_create(&server_thread,  NULL, server, NULL  );
 
-    pthread_create(&client1_thread, NULL, client, NULL);
-    pthread_create(&client2_thread, NULL, client, NULL);
+    pthread_create(&client1_thread, NULL, client, NULL  );
+    pthread_create(&client2_thread, NULL, client, NULL  );
 
-    pthread_join(server_thread, NULL);
+    pthread_join(   server_thread,  NULL                );
 
-    pthread_join(client1_thread, NULL);
-    pthread_join(client2_thread, NULL);
+    pthread_join(   client1_thread, NULL                );
+    pthread_join(   client2_thread, NULL                );
 
     return 0;
 }
@@ -31,7 +31,7 @@ void_p server(void_p _)
 {
     socket_t server_socket = server_init();
 
-    printf("SERVER: Listening...\n");
+    printf("SERVER: Listening...\n\n");
     server_run(server_socket, process_client);
 
     close(server_socket);
@@ -47,18 +47,19 @@ void process_client(socket_t client_socket)
         "HTTP/1.1 200 OK\r\n"
         "Content-Type: %s\r\n"
         "\r\n"
-        "<html><p>Hello, world!</p></html>\r\n",
+        "<html><body><p style=\"color: red;\">Hello from TCP + IPv6</p></body></html>\r\n",
         "text/html; charset=utf-8");
 
     send(client_socket, header, 1024, 0);
 }
+
 
 void_p client(void_p _)
 {
     socket_t client_socket;
     addr6_s  server_addr;
 
-    char rcv_msg[100];
+    char rcv_msg[1024];
 
     client_socket = socket_init6();
 
@@ -81,7 +82,7 @@ void_p client(void_p _)
         EXIT(0x1);
     }
 
-    recv(client_socket, rcv_msg, 100, 0);
+    recv(client_socket, rcv_msg, sizeof(rcv_msg), 0);
 
     printf("CLIENT: %s\n", rcv_msg);
 
