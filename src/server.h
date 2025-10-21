@@ -2,16 +2,11 @@
 #define LS_SERVER_H
 
 
-#include <stdio.h>
-#include <sys/socket.h>
-
-#include "include/ls_macros.h"
+#include "./shared.h"
 
 
-typedef i32_t   socket_t;
-
-
-static socket_t new_socket(void)    USED;
+socket_t server_init(void);
+void     server_run (socket_t server_socket, void (*process_client)(socket_t));
 
 
 #include "./server.c"

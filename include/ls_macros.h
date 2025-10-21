@@ -110,8 +110,6 @@
 	#define MEMSET      LS_MEMSET
 	#define MEMCPY      LS_MEMCPY
 
-    #define ERROR       LS_ERROR
-
     #define SUCCESS     LS_SUCCESS
     #define FAIL        LS_FAIL
 
