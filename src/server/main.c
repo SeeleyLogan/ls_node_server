@@ -1,6 +1,7 @@
 #include <signal.h>
 #include "../util.h"
-#include "./server.h"
+#include "./router.h"
+#include "./router_terminal.h"
 
 
 volatile bool_t stop = FALSE;
@@ -13,16 +14,22 @@ i32_t main(void)
 
     signal(SIGINT, sigint_handler);
 
-    set_logger_out(logger,     logger_out);
-    set_logger_out(err_logger, stderr);
-    set_logger_out(dbg_logger, stdout);
+    set_logger_out(logger,      logger_out);
+    set_logger_out(err_logger,  stderr);
+    set_logger_out(terr_logger, stderr);
+    set_logger_out(dbg_logger,  stdout);
+
+    router_terminal_init("");
 
     listener_init(4000);
     listener_init(5000);
 
+    sleep(15);
+
     while (!stop)
     {
-        router_poll();
+        poll_router();
+        poll_terminal();
 
         usleep(1);
     }

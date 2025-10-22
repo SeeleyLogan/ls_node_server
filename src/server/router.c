@@ -1,4 +1,4 @@
-#include "./server.h"
+#include "./router.h"
 
 
 INLINE void listener_init(u16_t port)
@@ -78,7 +78,7 @@ INLINE void listener_init(u16_t port)
     list_push(listener_v, listener);
 }
 
-INLINE void router_poll(void)
+INLINE void poll_router(void)
 {
     socket_t   client_socket;
 
@@ -97,7 +97,7 @@ INLINE void router_poll(void)
 
     listener_poll_i++;
 
-    if (client_socket == -1 && errno != EWOULDBLOCK)
+    if (client_socket == -1 && errno != EWOULDBLOCK && errno != EAGAIN)
     {
         log(err_logger, "client connect failed: %s", strerror(errno));
         errno = 0;
@@ -163,7 +163,7 @@ void poll_incoming_client(void)
 
     memset(recieve, 0, sizeof(recieve));
     bytes_recived = recv(client_socket, recieve, 1024, MSG_DONTWAIT | MSG_PEEK);
-    if (bytes_recived == -1 && errno == EWOULDBLOCK)
+    if (bytes_recived == -1 && (errno == EWOULDBLOCK || errno == EAGAIN))
     {
         log(logger, "client didn't respond yet");
         errno = 0;

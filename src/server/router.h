@@ -1,5 +1,5 @@
-#ifndef LS_SERVER_H
-#define LS_SERVER_H
+#ifndef LS_ROUTER_H
+#define LS_ROUTER_H
 
 
 #define MAX_INCOMING_CLIENTS            2048
@@ -12,9 +12,9 @@
 #include "include/ls_logging.h"
 
 
-static logger_s logger     = logger_init("SERVER", NULL);
-static logger_s err_logger = logger_init("SERVER", NULL);
-static logger_s dbg_logger = logger_init("SERVER", NULL);
+static logger_s logger     = logger_init("ROUTER", NULL);
+static logger_s err_logger = logger_init("ROUTER", NULL);
+static logger_s dbg_logger = logger_init("ROUTER", NULL);
 
 
 typedef struct
@@ -38,7 +38,7 @@ static list_init (listener_s, listener_v, MAX_LISTENERS, { 0 });
 
 void    listener_init       (u16_t port);
 
-void    router_poll         (void);
+void    poll_router         (void);
 
 void    push_incoming_client(socket_t client_socket);
 void    poll_incoming_client(void);
@@ -48,10 +48,10 @@ void    route_client        (socket_t client_socket);
 void    router_fini         (void);
 
 
-#include "./server.c"
+#include "./router.c"
 
 
-#endif  /* #ifndef LS_SERVER_H */
+#endif  /* #ifndef LS_ROUTER_H */
 
 
 /*
