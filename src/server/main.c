@@ -1,17 +1,35 @@
+#include <signal.h>
 #include "../util.h"
 #include "./server.h"
 
 
+volatile bool_t stop = FALSE;
+void sigint_handler(i32_t signal); 
+
+
 i32_t main(void)
 {
-    socket_t server_socket = server_init();
+    signal(SIGINT, sigint_handler);
 
-    /* printf("SERVER: Listening...\n\n"); */
-    server_run(server_socket);
+    listener_init(4000);
+    listener_init(5000);
 
-    close(server_socket);
+    while (!stop)
+    {
+        router_poll();
+
+        usleep(1);
+    }
+
+    router_fini();
 
     return 0;
+}
+
+
+void sigint_handler(i32_t signal)
+{
+    stop = TRUE;
 }
 
 

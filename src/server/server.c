@@ -1,80 +1,100 @@
 #include "./server.h"
 
 
-INLINE socket_t server_init(void)
+INLINE void listener_init(u16_t port)
 {
-    socket_t    server_socket;
-    addr6_s     server_addr;
+    listener_s listener;
+    socket_t   socket;
+    addr6_s    addr;
 
-    i32_t       opt = 0;
-    i32_t       flags;
+    i32_t      opt = 1;
+    i32_t      flags;
 
-    server_socket = socket_init6();
+    socket = socket_init6();
 
-    if (setsockopt(server_socket, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt)) < 0) {
-        perror("SERVER: setsockopt failed");
-        close(server_socket);
+    if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        perror("SERVER: setsockopt (SO_REUSEADDR) failed");
+        close(socket);
         EXIT(0x1);
     }
 
-    flags = fcntl(server_socket, F_GETFL);
+    if (setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt)) < 0) {
+        perror("SERVER: setsockopt (IPV6_V6ONLY) failed");
+        close(socket);
+        EXIT(0x1);
+    }
+
+    flags = fcntl(socket, F_GETFL);
     if (flags == -1)
     {
         perror("SERVER: Could not get flags");
-        close(server_socket);
+        close(socket);
         EXIT(0x1);
     }
 
     /* create a non-blocking socket */
-    if (fcntl(server_socket, F_SETFL, flags | O_NONBLOCK) == -1)
+    if (fcntl(socket, F_SETFL, flags | O_NONBLOCK) == -1)
     {
         perror("SERVER: Could not set flags");
-        close(server_socket);
+        close(socket);
         EXIT(0x1);
     }
 
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin6_family = AF_INET6;
-    server_addr.sin6_addr   = in6addr_any;
-    server_addr.sin6_port   = htons(PORT);
+    memset(&addr, 0, sizeof(addr));
+    addr.sin6_family = AF_INET6;
+    addr.sin6_addr   = in6addr_any;
+    addr.sin6_port   = htons(port);
 
-    if (bind(server_socket, CAST(&server_addr, addr_s *), sizeof(server_addr)) < 0) {
+    if (bind(socket, CAST(&addr, addr_s *), sizeof(addr)) < 0) {
         perror("SERVER: Bind failed");
-        close(server_socket);
+        close(socket);
         EXIT(0x1);
     }
 
-    if (listen(server_socket, 255) == -1)
+    if (listen(socket, 255) == -1)
     {
         perror("SERVER: Failed to start listening");
-        close(server_socket);
+        close(socket);
         EXIT(0x1);
     }
 
-    return server_socket;
+    listener.socket = socket;
+    listener.port   = port;
+
+    list_push(listener_v, listener);
 }
 
-void server_run(socket_t server_socket)
+INLINE void router_poll(void)
 {
-    while (1)
+    socket_t   client_socket;
+
+    /* listeners to poll? loopback to first listener? */
+    if (listener_v.size == 0)
     {
-        socket_t client_socket = accept(server_socket, NULL, NULL);
-
-        if (client_socket == -1 && errno != EWOULDBLOCK)
-        {
-            perror("SERVER: Client connect failed");
-            errno = 0;
-        }
-        else if (client_socket != -1)
-        {
-            push_incoming_client(client_socket);
-        }
-
-        /* only poll one client at a time */
-        poll_incoming_client();
-
-        usleep(1);
+        return;
     }
+    else if (listener_poll_i >= listener_v.size)
+    {
+        listener_poll_i = 0;
+    }
+
+    /* only poll one incoming client from one listener per poll */
+    client_socket = accept(list_get(listener_v, listener_poll_i).socket, NULL, NULL);
+
+    listener_poll_i++;
+
+    if (client_socket == -1 && errno != EWOULDBLOCK)
+    {
+        perror("SERVER: Client connect failed");
+        errno = 0;
+    }
+    else if (client_socket != -1)
+    {
+        push_incoming_client(client_socket);
+    }
+
+    /* only poll one client at a time */
+    poll_incoming_client();
 }
 
 
@@ -118,7 +138,7 @@ void poll_incoming_client(void)
     client_socket   = incoming_client.socket;
 
     /* max period between timeout ping? */
-    if (micros_now - incoming_client.micros_of_last_attempt < INCOMING_TIMEOUT_PERIOD_MICROS/INCOMING_TIMEOUT_RETRIES)
+    if (micros_now - incoming_client.micros_of_last_attempt < INCOMING_TIMEOUT_PERIOD_MICROS / INCOMING_TIMEOUT_RETRIES)
     {
         /* pushing forces client to be re-evaluated last,
          * leading to no client hogging the polls */
@@ -168,20 +188,17 @@ void poll_incoming_client(void)
 
 void route_client(socket_t client_socket)
 {
-    /* TODO: evaluate [recieved] and pass [client_socket]
-     * to appropriate node */
-
-    i64_t bytes_recived;
-
     char header[1024];
     char recieve[1024];
     memset(header, 0, sizeof(header));
     memset(recieve, 0, sizeof(recieve));
 
-    bytes_recived = recv(client_socket, recieve, 1024, MSG_DONTWAIT);
-    if (bytes_recived == -1)
+    /* TODO: evaluate [recieve] and pass [client_socket]
+     * to appropriate node */
+
+    if (recv(client_socket, recieve, 1024, MSG_DONTWAIT) == -1)
     {
-        perror("CLIENT: Failed to recieve");
+        perror("SERVER: Failed to recieve client's first packet");
         errno = 0;
         return;
     }
@@ -199,6 +216,26 @@ void route_client(socket_t client_socket)
     send(client_socket, header, sizeof(header), 0);
 
     close(client_socket);
+}
+
+
+void router_fini(void)
+{
+    /* close listeners */
+    while (listener_v.size > 0)
+    {
+        listener_s listener = list_pop(listener_v, 0);
+        
+        close(listener.socket);
+    }
+
+    /* close un-routed clients */
+    while (incoming_client_q.size > 0)
+    {
+        incoming_client_s client = queue_pop(incoming_client_q);
+
+        close(client.socket);
+    }
 }
 
 

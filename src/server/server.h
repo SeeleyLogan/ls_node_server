@@ -3,6 +3,7 @@
 
 
 #define MAX_INCOMING_CLIENTS            2048
+#define MAX_LISTENERS                   65536
 #define INCOMING_TIMEOUT_PERIOD_MICROS  3000000  /* 3 seconds */
 #define INCOMING_TIMEOUT_RETRIES        20
 
@@ -17,17 +18,28 @@ typedef struct
     u64_t    micros_of_last_attempt;
 }
 incoming_client_s;
+static queue_init(incoming_client_s, incoming_client_q, MAX_INCOMING_CLIENTS, { 0 });
 
-queue_init(incoming_client_s, incoming_client_q, MAX_INCOMING_CLIENTS);
+typedef struct
+{
+    socket_t socket;
+    u16_t    port;
+}
+listener_s;
+static u32_t listener_poll_i = 0;
+static list_init (listener_s, listener_v, MAX_LISTENERS, { 0 });
 
 
-socket_t    server_init         (void);
-void        server_run          (socket_t server_socket);
+void    listener_init       (u16_t port);
 
-void        push_incoming_client(socket_t client_socket);
-void        poll_incoming_client(void);
+void    router_poll         (void);
 
-void        route_client        (socket_t client_socket);
+void    push_incoming_client(socket_t client_socket);
+void    poll_incoming_client(void);
+
+void    route_client        (socket_t client_socket);
+
+void    router_fini         (void);
 
 
 #include "./server.c"

@@ -20,17 +20,30 @@ typedef struct  sockaddr_in6    addr6_s;
 typedef struct  sockaddr        addr_s;
 
 
-#define queue_init(type, name, cap) struct { type data[cap]; u64_t head, tail, size, capacity; } name = { { { 0 } }, 0, 0, 0, cap }
+#define queue_init(type, name, cap, fill) struct { type data[cap]; u64_t head, tail, size, capacity; } name = { { fill }, 0, 0, 0, cap }
 
-#define queue_push(q, value)                                \
-        (q).data[(q).tail] = value;                         \
-        (q).tail           = ((q).tail + 1) % (q).capacity; \
-        (q).size++; 
+#define queue_push(q, value)                            \
+    (q).data[(q).tail] = value;                         \
+    (q).tail           = ((q).tail + 1) % (q).capacity; \
+    (q).size++; 
 
-#define queue_pop(q)                                        \
-    (q).data[(q).head];                                     \
-    (q).head = ((q).head + 1) % (q).capacity;               \
+#define queue_pop(q)                                    \
+    (q).data[(q).head];                                 \
+    (q).head = ((q).head + 1) % (q).capacity;           \
     (q).size--;
+
+#define list_init(type, name, cap, fill) struct { type data[cap]; u64_t size, capacity; } name = { { fill }, 0, cap }
+
+#define list_push(l, value)                             \
+    (l).data[(l).size] = value;                         \
+    (l).size++;
+
+#define list_pop(l, i)                                  \
+    (l).data[i];                                        \
+    (l).data[i] = (l).data[(l).size];                   \
+    (l).size--;
+
+#define list_get(q, i) (q).data[i]
 
 
 socket_t socket_init6(void) USED;
