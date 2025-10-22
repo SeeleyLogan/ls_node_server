@@ -27,7 +27,7 @@ void        server_run          (socket_t server_socket);
 void        push_incoming_client(socket_t client_socket);
 void        poll_incoming_client(void);
 
-void        route_client        (socket_t client_socket, char recieved[1024]);
+void        route_client        (socket_t client_socket);
 
 
 #include "./server.c"

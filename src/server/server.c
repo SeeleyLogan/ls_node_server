@@ -128,7 +128,7 @@ void poll_incoming_client(void)
     }
 
     memset(recieve, 0, sizeof(recieve));
-    bytes_recived = recv(client_socket, recieve, 1024, MSG_DONTWAIT);
+    bytes_recived = recv(client_socket, recieve, 1024, MSG_DONTWAIT | MSG_PEEK);
     if (bytes_recived == -1 && errno == EWOULDBLOCK)
     {
         errno = 0;
@@ -142,6 +142,10 @@ void poll_incoming_client(void)
             /* re-evaluated last */
             queue_push(incoming_client_q, incoming_client);
         }
+        else
+        {
+            close(client_socket);
+        }
 
         return;
     }
@@ -150,23 +154,37 @@ void poll_incoming_client(void)
         perror("SERVER: Client failed");
         errno = 0;
 
+        close(client_socket);
+
         return;
     }
 
     /* printf("SERVER: Recieved\n==============================\n");
     printf("%s\n\n", recieve); */
 
-    route_client(client_socket, recieve);
+    route_client(client_socket);
 }
 
 
-void route_client(socket_t client_socket, char recieved[1024])
+void route_client(socket_t client_socket)
 {
     /* TODO: evaluate [recieved] and pass [client_socket]
      * to appropriate node */
 
+    i64_t bytes_recived;
+
     char header[1024];
+    char recieve[1024];
     memset(header, 0, sizeof(header));
+    memset(recieve, 0, sizeof(recieve));
+
+    bytes_recived = recv(client_socket, recieve, 1024, MSG_DONTWAIT);
+    if (bytes_recived == -1)
+    {
+        perror("CLIENT: Failed to recieve");
+        errno = 0;
+        return;
+    }
     
     /* printf("SERVER: Client recieved\n==============================\n"); */
     

@@ -1,4 +1,4 @@
-#define PORT 5000
+#define PORT 4000
 
 #if defined(SERVER)
     #include "./server/main.c"
