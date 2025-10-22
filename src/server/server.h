@@ -9,6 +9,12 @@
 
 
 #include "../util.h"
+#include "include/ls_logging.h"
+
+
+static logger_s logger     = logger_init("SERVER", NULL);
+static logger_s err_logger = logger_init("SERVER", NULL);
+static logger_s dbg_logger = logger_init("SERVER", NULL);
 
 
 typedef struct

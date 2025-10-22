@@ -9,7 +9,13 @@ void sigint_handler(i32_t signal);
 
 i32_t main(void)
 {
+    FILE *logger_out = fopen("./bin/server.log", "wb");
+
     signal(SIGINT, sigint_handler);
+
+    set_logger_out(logger,     logger_out);
+    set_logger_out(err_logger, stderr);
+    set_logger_out(dbg_logger, stdout);
 
     listener_init(4000);
     listener_init(5000);
@@ -22,6 +28,8 @@ i32_t main(void)
     }
 
     router_fini();
+
+    fclose(logger_out);
 
     return 0;
 }

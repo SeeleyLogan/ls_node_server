@@ -50,7 +50,7 @@ void *client(void *_)
     {
         if (connect(server_socket, CAST(&server_addr, addr_s *), sizeof(server_addr)) == -1)
         {
-            perror("CLIENT: Failed to connect client");
+            /* perror("CLIENT: Failed to connect client"); */
             errno = 0;
             sleep(1);
             
@@ -65,7 +65,7 @@ void *client(void *_)
          * the first game packet resonse */
         recv(server_socket, rcv_msg, sizeof(rcv_msg), 0);
 
-        printf("CLIENT: %s\n", rcv_msg);
+        /* printf("CLIENT: %s\n", rcv_msg); */
 
         break;
     }

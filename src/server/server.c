@@ -12,32 +12,42 @@ INLINE void listener_init(u16_t port)
 
     socket = socket_init6();
 
-    if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-        perror("SERVER: setsockopt (SO_REUSEADDR) failed");
+    if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    {
+        log(err_logger, "setsockopt (SO_REUSEADDR) failed: %s", strerror(errno));
+        errno = 0;
+        
         close(socket);
-        EXIT(0x1);
+        return;
     }
 
-    if (setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt)) < 0) {
-        perror("SERVER: setsockopt (IPV6_V6ONLY) failed");
+    if (setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt)) < 0)
+    {
+        log(err_logger, "setsockopt (IPV6_V6ONLY) failed: %s", strerror(errno));
+        errno = 0;
+
         close(socket);
-        EXIT(0x1);
+        return;
     }
 
     flags = fcntl(socket, F_GETFL);
     if (flags == -1)
     {
-        perror("SERVER: Could not get flags");
+        log(err_logger, "could not get flags: %s", strerror(errno));
+        errno = 0;
+
         close(socket);
-        EXIT(0x1);
+        return;
     }
 
     /* create a non-blocking socket */
     if (fcntl(socket, F_SETFL, flags | O_NONBLOCK) == -1)
     {
-        perror("SERVER: Could not set flags");
+        log(err_logger, "could not set flags: %s", strerror(errno));
+        errno = 0;
+
         close(socket);
-        EXIT(0x1);
+        return;
     }
 
     memset(&addr, 0, sizeof(addr));
@@ -46,16 +56,20 @@ INLINE void listener_init(u16_t port)
     addr.sin6_port   = htons(port);
 
     if (bind(socket, CAST(&addr, addr_s *), sizeof(addr)) < 0) {
-        perror("SERVER: Bind failed");
+        log(err_logger, "bind failed: %s", strerror(errno));
+        errno = 0;
+
         close(socket);
-        EXIT(0x1);
+        return;
     }
 
     if (listen(socket, 255) == -1)
     {
-        perror("SERVER: Failed to start listening");
+        log(err_logger, "failed to start listening: %s", strerror(errno));
+        errno = 0;
+
         close(socket);
-        EXIT(0x1);
+        return;
     }
 
     listener.socket = socket;
@@ -85,7 +99,7 @@ INLINE void router_poll(void)
 
     if (client_socket == -1 && errno != EWOULDBLOCK)
     {
-        perror("SERVER: Client connect failed");
+        log(err_logger, "client connect failed: %s", strerror(errno));
         errno = 0;
     }
     else if (client_socket != -1)
@@ -151,6 +165,7 @@ void poll_incoming_client(void)
     bytes_recived = recv(client_socket, recieve, 1024, MSG_DONTWAIT | MSG_PEEK);
     if (bytes_recived == -1 && errno == EWOULDBLOCK)
     {
+        log(logger, "client didn't respond yet");
         errno = 0;
         
         incoming_client.attempts_to_connect++;
@@ -164,6 +179,8 @@ void poll_incoming_client(void)
         }
         else
         {
+            log(logger, "client timed out");
+
             close(client_socket);
         }
 
@@ -171,16 +188,13 @@ void poll_incoming_client(void)
     }
     else if (bytes_recived == -1)
     {
-        perror("SERVER: Client failed");
+        log(err_logger, "client failed: %s", strerror(errno));
         errno = 0;
 
         close(client_socket);
 
         return;
     }
-
-    /* printf("SERVER: Recieved\n==============================\n");
-    printf("%s\n\n", recieve); */
 
     route_client(client_socket);
 }
@@ -193,18 +207,22 @@ void route_client(socket_t client_socket)
     memset(header, 0, sizeof(header));
     memset(recieve, 0, sizeof(recieve));
 
+    log(logger, "recieved a client");
+
     /* TODO: evaluate [recieve] and pass [client_socket]
      * to appropriate node */
 
     if (recv(client_socket, recieve, 1024, MSG_DONTWAIT) == -1)
     {
-        perror("SERVER: Failed to recieve client's first packet");
+        log(err_logger, "failed to recieve client's first packet: %s", strerror(errno));
         errno = 0;
+
         return;
     }
     
-    /* printf("SERVER: Client recieved\n==============================\n"); */
+    log(logger, "recieved a packet:\n%s", recieve);
     
+    /* DEBUG */
     snprintf(header, sizeof(header),
         "HTTP/1.1 200 OK\r\n"
         "Content-Type: text/html;charset=utf-8\r\n"
@@ -212,9 +230,10 @@ void route_client(socket_t client_socket)
         "\r\n"
         "<html><body><p style=\"color: red;\">Hello from TCP + IPv6</p></body></html>\r\n");
 
-    /* printf("SERVER: Sending %s\n==============================\n", header); */
+    log(logger, "sending a packet:\n%s", header);
     send(client_socket, header, sizeof(header), 0);
 
+    /* DEBUG: nodes should close sockets */
     close(client_socket);
 }
 
