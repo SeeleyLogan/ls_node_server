@@ -1,34 +1,18 @@
-#ifndef LS_SHARED_H
-#define LS_SHARED_H
+#include "../util.h"
+#include "./server.h"
 
 
-#include <stdio.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <errno.h>
+i32_t main(void)
+{
+    socket_t server_socket = server_init();
 
-#include "include/ls_macros.h"
+    /* printf("SERVER: Listening...\n\n"); */
+    server_run(server_socket);
 
+    close(server_socket);
 
-typedef i32_t                   socket_t;
-typedef struct  sockaddr_in6    addr6_s;
-typedef struct  sockaddr        addr_s;
-
-
-#define PORT 4000
-
-
-socket_t socket_init6(void) USED;
-
-
-#include "./shared.c"
-
-
-#endif  /* #ifndef LS_SHARED_H */
+    return 0;
+}
 
 
 /*

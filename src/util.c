@@ -1,4 +1,4 @@
-#include "./shared.h"
+#include "./util.h"
 
 INLINE socket_t socket_init6(void)
 {
@@ -12,6 +12,15 @@ INLINE socket_t socket_init6(void)
     }
 
     return new_socket;
+}
+
+
+u64_t monotonic_micros(void)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+
+    return CAST(ts.tv_sec, u64_t) * CAST(1000000, u64_t) + ts.tv_nsec / CAST(1000, u64_t);
 }
 
 

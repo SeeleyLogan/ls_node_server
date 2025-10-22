@@ -2,11 +2,32 @@
 #define LS_SERVER_H
 
 
-#include "./shared.h"
+#define MAX_INCOMING_CLIENTS            2048
+#define INCOMING_TIMEOUT_PERIOD_MICROS  3000000  /* 3 seconds */
+#define INCOMING_TIMEOUT_RETRIES        20
 
 
-socket_t server_init(void);
-void     server_run (socket_t server_socket, void (*process_client)(socket_t));
+#include "../util.h"
+
+
+typedef struct
+{
+    socket_t socket;
+    u32_t    attempts_to_connect;
+    u64_t    micros_of_last_attempt;
+}
+incoming_client_s;
+
+queue_init(incoming_client_s, incoming_client_q, MAX_INCOMING_CLIENTS);
+
+
+socket_t    server_init         (void);
+void        server_run          (socket_t server_socket);
+
+void        push_incoming_client(socket_t client_socket);
+void        poll_incoming_client(void);
+
+void        route_client        (socket_t client_socket, char recieved[1024]);
 
 
 #include "./server.c"
