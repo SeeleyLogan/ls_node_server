@@ -7,12 +7,18 @@ INLINE void listener_init(u16_t port)
     socket_t   socket;
     addr6_s    addr;
 
-    i32_t      opt = 1;
+    i32_t      opt_enable;
     i32_t      flags;
 
     socket = socket_init6();
 
-    if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    /* allow binding to address + port recently used
+     * 
+     * packets going to previous port may be recieved
+     * in the new one. therefore, this should be disabled
+     * in production */
+    opt_enable = TRUE;
+    if (setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, &opt_enable, sizeof(opt_enable)) < 0)
     {
         log(err_logger, "setsockopt (SO_REUSEADDR) failed: %s", strerror(errno));
         errno = 0;
@@ -21,7 +27,9 @@ INLINE void listener_init(u16_t port)
         return;
     }
 
-    if (setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt)) < 0)
+    /* allow use of IPv6 AND IPv4 by disabling IPV6_V6ONLY */
+    opt_enable = FALSE;
+    if (setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, &opt_enable, sizeof(opt_enable)) < 0)
     {
         log(err_logger, "setsockopt (IPV6_V6ONLY) failed: %s", strerror(errno));
         errno = 0;
@@ -30,6 +38,7 @@ INLINE void listener_init(u16_t port)
         return;
     }
 
+    /* get existing flags so we can append O_NONBLOCK */
     flags = fcntl(socket, F_GETFL);
     if (flags == -1)
     {
@@ -63,7 +72,7 @@ INLINE void listener_init(u16_t port)
         return;
     }
 
-    if (listen(socket, 255) == -1)
+    if (listen(socket, MAX_INCOMING_CLIENTS) == -1)
     {
         log(err_logger, "failed to start listening: %s", strerror(errno));
         errno = 0;

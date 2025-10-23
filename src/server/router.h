@@ -36,16 +36,16 @@ static u32_t listener_poll_i = 0;
 static list_init (listener_s, listener_v, MAX_LISTENERS, { 0 });
 
 
-void    listener_init       (u16_t port);
+void listener_init       (u16_t port);
 
-void    poll_router         (void);
+void poll_router         (void);
 
-void    push_incoming_client(socket_t client_socket);
-void    poll_incoming_client(void);
+void push_incoming_client(socket_t client_socket);
+void poll_incoming_client(void);
 
-void    route_client        (socket_t client_socket);
+void route_client        (socket_t client_socket);
 
-void    router_fini         (void);
+void router_fini         (void);
 
 
 #include "./router.c"

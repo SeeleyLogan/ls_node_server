@@ -3,17 +3,19 @@
 
 
 #include "./router.h"
+#include "./router_commands.h"
 
 
 static logger_s terr_logger = logger_init("TERMINAL", NULL);
 
 
-static char     input_b[10];
+static char input_b[256];
 
 
 void router_terminal_init(const char *autorun);
 
 void poll_terminal       (void);
+void process_command     (void);
 
 
 #include "./router_terminal.c"

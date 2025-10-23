@@ -22,39 +22,18 @@ void router_terminal_init(const char *autorun)
         return;
     }
 
+    printf("> ");
     /* TODO: execute autorun */
 }
 
 
 void poll_terminal(void)
 {
+    u32_t i = 0;
     i64_t bytes_read;
     char  c;
 
-    bytes_read = read(STDIN_FILENO, input_b, sizeof(input_b));
-
-    if (bytes_read == -1 && errno != EWOULDBLOCK && errno != EAGAIN)
-    {
-        log(terr_logger, "something went wrong: %s", strerror(errno));
-        errno = 0;
-
-        return;
-    }
-    else if (bytes_read == -1 && (errno == EWOULDBLOCK || errno == EAGAIN))
-    {
-        /* nothing to read */
-        return;
-    }
-    printf("input_b: %s\n", input_b);
-    if (bytes_read < sizeof(input_b) && input_b[sizeof(input_b) - 1] != '\n')
-    {
-        /* process_command() */
-        return;
-    }
-
-    /* if input buffer was filled, there may still
-     * be bytes in the stdin. clear those bytes
-     * (without clearing new inputs in stdin) */
+    /* fill input buffer with next line of input */
     do
     {
         bytes_read = read(STDIN_FILENO, &c, sizeof(c));
@@ -66,11 +45,45 @@ void poll_terminal(void)
 
             return;
         }
-        else if ((bytes_read == -1 && (errno == EWOULDBLOCK || errno == EAGAIN)) || c == '\n')
+        else if (bytes_read == -1 && (errno == EWOULDBLOCK || errno == EAGAIN))
         {
-            /* nothing to read or newline reached */
+            /* nothing to read */
             break;
         }
+
+        /* prevent buffer overflow (and ignore newline) */
+        if (i < (sizeof(input_b) - 1) && c != '\n')
+        {
+            input_b[i] = c;
+            i++;
+        }
     }
-    while (1);
+    while (c != '\n');
+
+    input_b[i] = 0;  /* null-term */
+
+    /* input available? */
+    if (i != 0)
+    {
+        process_command();
+
+        printf("\n> ");
+    }
+}
+
+/* expects command to be in input_b */
+INLINE void process_command(void)
+{
+    u32_t delim_c, i;
+    char *command_name = input_b, *next_token;
+
+    next_token = stok(command_name, " ", &delim_c);
+
+    for (i = 0; i < sizeof(router_command_v) / sizeof(router_command_v[0]); i++)
+    {
+        if (strcasecmp(router_command_v[i].command_name, command_name) == 0)
+        {
+            router_command_v[i].func(next_token);
+        }
+    }
 }

@@ -10,9 +10,12 @@ void sigint_handler(i32_t signal);
 
 i32_t main(void)
 {
+    char printf_buffer[1024] = { 0 };
     FILE *logger_out = fopen("./bin/server.log", "wb");
 
     signal(SIGINT, sigint_handler);
+
+    setvbuf(stdout, printf_buffer, _IOFBF, sizeof(printf_buffer));
 
     set_logger_out(logger,      logger_out);
     set_logger_out(err_logger,  stderr);
@@ -21,15 +24,12 @@ i32_t main(void)
 
     router_terminal_init("");
 
-    listener_init(4000);
-    listener_init(5000);
-
-    sleep(15);
-
     while (!stop)
     {
         poll_router();
         poll_terminal();
+
+        fflush(stdout);
 
         usleep(1);
     }

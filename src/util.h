@@ -48,7 +48,9 @@ typedef struct  sockaddr        addr_s;
 
 socket_t socket_init6(void) USED;
 
-u64_t monotonic_micros(void);
+u64_t    monotonic_micros(void);
+
+char *stok(char *str, char *delims, u32_t *delim_c);  /* better strtok */
 
 
 #include "./util.c"

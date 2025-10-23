@@ -1,5 +1,6 @@
 #include "./util.h"
 
+
 INLINE socket_t socket_init6(void)
 {
     socket_t new_socket;
@@ -21,6 +22,40 @@ u64_t monotonic_micros(void)
     clock_gettime(CLOCK_MONOTONIC, &ts);
 
     return CAST(ts.tv_sec, u64_t) * CAST(1000000, u64_t) + ts.tv_nsec / CAST(1000, u64_t);
+}
+
+
+INLINE char *stok(char *str, char *delims, u32_t *delim_c)
+{
+    char *next_token = str;
+    char c;
+
+    (*delim_c) = 0;
+
+    while ((c = next_token[0]) != '\0' && !strchr(delims, c))
+    {
+        next_token++;
+    }
+
+    if (c == '\0')
+    {
+        return NULL;
+    }
+
+    do
+    {
+        next_token[0] = 0;
+        (*delim_c)++;
+        next_token++;
+    }
+    while ((c = next_token[0]) != '\0' && strchr(delims, c));
+
+    if (c == '\0')
+    {
+        return NULL;
+    }
+
+    return next_token;
 }
 
 
