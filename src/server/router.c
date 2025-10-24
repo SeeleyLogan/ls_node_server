@@ -91,6 +91,8 @@ INLINE void poll_router(void)
 {
     socket_t   client_socket;
 
+    listener_poll_i++;
+
     /* listeners to poll? loopback to first listener? */
     if (listener_v.size == 0)
     {
@@ -103,8 +105,6 @@ INLINE void poll_router(void)
 
     /* only poll one incoming client from one listener per poll */
     client_socket = accept(list_get(listener_v, listener_poll_i).socket, NULL, NULL);
-
-    listener_poll_i++;
 
     if (client_socket == -1 && errno != EWOULDBLOCK && errno != EAGAIN)
     {
@@ -207,7 +207,6 @@ void poll_incoming_client(void)
 
     route_client(client_socket);
 }
-
 
 void route_client(socket_t client_socket)
 {

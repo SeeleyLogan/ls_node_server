@@ -22,7 +22,7 @@ i32_t main(void)
     set_logger_out(terr_logger, stderr);
     set_logger_out(dbg_logger,  stdout);
 
-    router_terminal_init("./resources/startup.rcmds");
+    router_terminal_init("./resources/startup.rsc");
 
     while (!stop)
     {

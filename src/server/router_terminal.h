@@ -9,8 +9,8 @@
 static logger_s terr_logger = logger_init("TERMINAL", NULL);
 
 
-static char command_stream[256];
-static u8_t stream_z;
+static char command_stream[2048];
+static u16_t stream_z;
 
 
 void router_terminal_init(const char *startup);

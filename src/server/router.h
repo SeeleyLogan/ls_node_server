@@ -33,7 +33,7 @@ typedef struct
 }
 listener_s;
 static u32_t listener_poll_i = 0;
-static list_init (listener_s, listener_v, MAX_LISTENERS, { 0 });
+static list_init(listener_s, listener_v, MAX_LISTENERS, { 0 });
 
 
 void listener_init       (u16_t port);

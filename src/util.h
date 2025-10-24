@@ -40,7 +40,7 @@ typedef struct  sockaddr        addr_s;
 
 #define list_pop(l, i)                                  \
     (l).data[i];                                        \
-    (l).data[i] = (l).data[(l).size];                   \
+    (l).data[i] = (l).data[(l).size - 1];               \
     (l).size--;
 
 #define list_get(q, i) (q).data[i]
@@ -51,8 +51,6 @@ socket_t socket_init6(void) USED;
 u64_t    monotonic_micros(void);
 
 char *stok(char *str, char *delims, u32_t *delim_c);  /* better strtok */
-
-void  newline_terminate_file(const char *file_name);
 
 
 #include "./util.c"

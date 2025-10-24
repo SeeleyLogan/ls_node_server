@@ -110,6 +110,7 @@ void poll_terminal(bool_t startup_cmd)
     /* input available? */
     if (stream_z != 0)
     {
+        log(logger, "recieved command '%s'", command_stream);
         process_command();
 
         printf("> ");
