@@ -69,6 +69,7 @@
 
 
 #ifndef LS_NO_SHORT_NAMES
+#define LS_NO_SHORT_NAMES
 
 	#define INLINE 		LS_INLINE
 	#define USED		LS_USED
