@@ -22,12 +22,13 @@ i32_t main(void)
     set_logger_out(terr_logger, stderr);
     set_logger_out(dbg_logger,  stdout);
 
-    router_terminal_init("");
+    router_terminal_init("./resources/startup.rcmds");
 
     while (!stop)
     {
         poll_router();
-        poll_terminal();
+        poll_input();
+        poll_terminal(FALSE);
 
         fflush(stdout);
 

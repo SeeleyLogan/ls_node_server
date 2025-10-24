@@ -59,6 +59,65 @@ INLINE char *stok(char *str, char *delims, u32_t *delim_c)
 }
 
 
+result_t ensure_newline_at_eof(const char *path)
+{
+    FILE *f;
+    u64_t size;
+    char last_char;
+
+    f = fopen(path, "rb");
+    if (!f)
+    {
+        return FALSE;
+    }
+
+    if (fseek(f, 0, SEEK_END) != 0)
+    {
+        fclose(f);
+
+        return FALSE;
+    }
+
+    size = ftell(f);
+    if (size == 0)
+    {
+        fclose(f);
+        f = fopen(path, "ab");
+        
+        if (!f)
+        {
+            return FALSE;
+        }
+
+        fputc('\n', f);
+
+        fclose(f);
+
+        return TRUE;
+    }
+
+    fseek(f, -1, SEEK_END);
+    last_char = fgetc(f);
+    fclose(f);
+
+    if (last_char != '\n')
+    {
+        f = fopen(path, "ab");
+        if (!f) 
+        {
+            return FALSE;
+        }
+
+        fputc('\n', f);
+        fclose(f);
+
+        return TRUE;
+    }
+
+    return TRUE;
+}
+
+
 /*
  * Copyright (C) 2025  Logan Seeley
  *

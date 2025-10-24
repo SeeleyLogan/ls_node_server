@@ -9,12 +9,14 @@
 static logger_s terr_logger = logger_init("TERMINAL", NULL);
 
 
-static char input_b[256];
+static char command_stream[256];
+static u8_t stream_z;
 
 
-void router_terminal_init(const char *autorun);
+void router_terminal_init(const char *startup);
 
-void poll_terminal       (void);
+void poll_input          (void);
+void poll_terminal       (bool_t startup_cmd);
 void process_command     (void);
 
 

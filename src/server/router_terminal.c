@@ -1,9 +1,12 @@
 #include "./router_terminal.h"
 
 
-void router_terminal_init(const char *autorun)
+void router_terminal_init(const char *startup)
 {
     i32_t flags;
+    u32_t i = 0;
+    FILE *startup_f;
+    char c;
     
     flags = fcntl(STDIN_FILENO, F_GETFL);
     if (flags == -1)
@@ -14,6 +17,7 @@ void router_terminal_init(const char *autorun)
         return;
     }
 
+    /* enable non-blocking input */
     if (fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK) == -1)
     {
         log(err_logger, "could not set flags: %s", strerror(errno));
@@ -22,18 +26,48 @@ void router_terminal_init(const char *autorun)
         return;
     }
 
+    startup_f = fopen(startup, "rb");
+    if (!startup_f)
+    {
+        log(err_logger, "could not open startup file: %s", strerror(errno));
+        errno = 0;
+
+        printf("> ");
+
+        return;
+    }
+
+    /* execute startup commands */
     printf("> ");
-    /* TODO: execute autorun */
+    do
+    {
+        c = fgetc(startup_f);
+        
+        if (i < (sizeof(command_stream) - 1) && c != '\n' && c != EOF)
+        {
+            command_stream[i] = c;
+            i++;
+        }
+        else if (c == '\n' || (c == EOF && i > 0 && command_stream[i - 1] != 0))
+        {
+            command_stream[i] = 0;
+            stream_z = i;
+            i = 0;
+
+            printf("%s\n", command_stream);
+            poll_terminal(TRUE);
+        }
+    }
+    while (c != EOF);
 }
 
 
-void poll_terminal(void)
+void poll_input(void)
 {
     u32_t i = 0;
     i64_t bytes_read;
     char  c;
 
-    /* fill input buffer with next line of input */
     do
     {
         bytes_read = read(STDIN_FILENO, &c, sizeof(c));
@@ -52,30 +86,43 @@ void poll_terminal(void)
         }
 
         /* prevent buffer overflow (and ignore newline) */
-        if (i < (sizeof(input_b) - 1) && c != '\n')
+        if (i < (sizeof(command_stream) - 1) && c != '\n')
         {
-            input_b[i] = c;
+            command_stream[i] = c;
             i++;
         }
     }
     while (c != '\n');
 
-    input_b[i] = 0;  /* null-term */
+    command_stream[i] = '\0';
 
+    /* user pressed enter with no input? */
+    if (c == '\n' && i == 0)
+    {
+        printf("> ");
+    }
+
+    stream_z = i;
+}
+
+void poll_terminal(bool_t startup_cmd)
+{   
     /* input available? */
-    if (i != 0)
+    if (stream_z != 0)
     {
         process_command();
 
-        printf("\n> ");
+        printf("> ");
     }
+
+    stream_z = 0;
 }
 
-/* expects command to be in input_b */
+/* expects command to be in command_stream */
 INLINE void process_command(void)
 {
     u32_t delim_c, i;
-    char *command_name = input_b, *next_token;
+    char *command_name = command_stream, *next_token;
 
     next_token = stok(command_name, " ", &delim_c);
 

@@ -52,6 +52,8 @@ u64_t    monotonic_micros(void);
 
 char *stok(char *str, char *delims, u32_t *delim_c);  /* better strtok */
 
+void  newline_terminate_file(const char *file_name);
+
 
 #include "./util.c"
 
